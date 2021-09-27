@@ -5,22 +5,54 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 
+IDS = {
+    # Datos generales
+    'Mision':'transparenciaDetForm:idGralesRegistro:_idJsp31',
+    'Vision':'transparenciaDetForm:idGralesRegistro:_idJsp36',
+    'Pagina web':'transparenciaDetForm:idGralesRegistro:_idJsp41',
+    'Anio de autorizacion':'transparenciaDetForm:_idJsp26',
+    # Plantillas de personal
+    'Plantilla laboral': 'transparenciaDetForm:idGralesRegistro:_idJsp78',
+    'Plantilla voluntariado': 'transparenciaDetForm:idGralesRegistro:_idJsp79',
+    'Monto total plantilla laboral': 'transparenciaDetForm:idEgresosRegistro:_idJsp166',
+    # Patrimonio
+    'Activo': 'transparenciaDetForm:idIngresosRegistro:_idJsp107',
+    'Pasivo': 'transparenciaDetForm:idIngresosRegistro:_idJsp108',
+    'Capital': 'transparenciaDetForm:idIngresosRegistro:_idJsp109',
+    # Gastos
+    'Gastos administracion': 'transparenciaDetForm:idEgresosRegistro:_idJsp200',
+    'Gastos operacion': 'transparenciaDetForm:idEgresosRegistro:_idJsp201',
+    'Gastos representacion': 'transparenciaDetForm:idEgresosRegistro:_idJsp202'
+}
+
+def get_osc_field(browser, dict_osc, field_name):
+    field = browser.find_element_by_id(IDS[field_name]).text
+    dict_osc[field_name] = field
+
 # Funcion que scrapea todos los datos devueltos por la consulta
 def get_osc_data(browser):
     osc = {}
-    mision = browser.find_element_by_name("transparenciaDetForm:idGralesRegistro:_idJsp31").text
-    osc["Mision"] = mision
 
-    rubro_aut = browser.find_element_by_name("transparenciaDetForm:idGralesRegistro:idRubro2")
+    for key, value in IDS.items():
+        get_osc_field(browser, osc, key)
+    
+    # Rubros autorizados
+    rubro_aut = browser.find_element_by_id("transparenciaDetForm:idGralesRegistro:idRubro2")
     rubro_aut = Select(rubro_aut)
     rubros = [opt.text for opt in rubro_aut.options]
     osc["rubros_autorizados"] = rubros
 
-    pagina_web = browser.find_element_by_name("transparenciaDetForm:idGralesRegistro:_idJsp41").text
-    osc["pagina_web"] = pagina_web
+# Ejercicio Fiscal
+    # Selector --> transparenciaDetForm:idSelectEjercicioFiscal (childs -> anios disponibles)
+    # Boton para consulta de anio --> transparenciaDetForm:_idJsp22
 
-    # Tabla ingresos --> 'transparenciaDetForm:idIngresosRegistro:dataTableIngresos'
-    # Obtener todos los elementos de la tabla --> tabla.find_elements_by_css_selector("*")
+# Ingresos
+    # transparenciaDetForm:idIngresosRegistro:dataTableIngresos
+    # |
+    #  -> transparenciaDetForm:idIngresosRegistro:dataTableIngresos:tbody_element
+    # Obtener todos los elementos de la tabla --> tabla_body.find_elements_by_css_selector("*")
+
+    # Total --> class =piePaginaText
 
     return osc
 
