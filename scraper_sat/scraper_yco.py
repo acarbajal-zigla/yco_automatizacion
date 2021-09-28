@@ -4,6 +4,7 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+import re
 
 NAMES = {
     # Datos generales
@@ -28,15 +29,18 @@ NAMES = {
 }
 
 def get_osc_field(browser, dict_osc, field_name):
+    
+    REGEX_WEB = re.compile(r"window\.open\(\'<web>\', \'popupWindowName\', \'menubar=no, toolbar=no, status=yes\'\); return false;")
+    
     field = browser.find_element_by_name(NAMES[field_name])
     if field.tag_name == 'input':
         dict_osc[field_name] = field.get_attribute('value')
     elif field.tag_name == 'textarea':
         dict_osc[field_name] = field.text
     elif field.tag_name == 'a':
-        pass
-    #
-    
+        field = field.get_attribute('href')
+        match = REGEX_WEB.match(field)
+        dict_osc[field_name] = match.group('web')
 
 # Funcion que scrapea todos los datos devueltos por la consulta
 def get_osc_data(browser):
@@ -51,6 +55,27 @@ def get_osc_data(browser):
     rubros = [opt.text for opt in rubro_aut.options]
     osc["rubros_autorizados"] = rubros
 
+# Egresos
+    # Montos y conceptos desarrollo directo de la actividad
+    wait = WebDriverWait(browser, 10)
+    wait.until(EC.presence_of_element_located((By.ID, 'transparenciaDetForm:idEgresosRegistro:dataTableMontosConceptos:tbody_element')))
+    tabla = browser.find_element_by_id("transparenciaDetForm:idEgresosRegistro:dataTableMontosConceptos:tbody_element")
+    montos=[]
+    aux=dict()
+    
+    body = tabla.find_element_by_xpath('../../../../../../../../tr[4]/td')
+    scroller = body.find_elements_by_xpath(".//table[contains(@class,'scroller')]/tbody/tr/td")
+    
+    for page in range(1,len(scroller) - 4):
+        browser.find_element_by_id(f"transparenciaDetForm:idEgresosRegistro:scrollMontosConceptosidx{page}").click()
+        wait.until(EC.presence_of_element_located((By.ID, 'transparenciaDetForm:idEgresosRegistro:dataTableMontosConceptos:tbody_element')))
+        tabla = browser.find_element_by_id("transparenciaDetForm:idEgresosRegistro:dataTableMontosConceptos:tbody_element")
+        for renglon in tabla.find_elements_by_xpath(".//tr[contains(@class,'renglon')]"):
+            aux={'monto':'', 'concepto':''}
+            aux['monto'] = renglon.find_element_by_xpath(f"./td[1]/table/tbody/tr/td").text
+            aux['concepto'] = renglon.find_element_by_xpath(f"./td[2]").text
+            montos.append(aux)
+    print(montos)
 # Ejercicio Fiscal
     # Selector --> transparenciaDetForm:idSelectEjercicioFiscal (childs -> anios disponibles)
     # Boton para consulta de anio --> transparenciaDetForm:_idJsp22
@@ -88,21 +113,25 @@ def query_rfc(browser: webdriver.Chrome, rfc: str, ejercicio: str):
         return False
     return True
     
-RFC = "FLA080707KE7"
+RFC = "CRM050218MCA"
 ejercicio = '2019'
 
 options = Options()
 #options.headless=True
-options.gpu
+
 browser = webdriver.Chrome(options=options)
 osc={}
 
-flag_query = True
-while(flag_query == True):
+i=0
+flag_query = False
+while(i<2 and flag_query == False):
     flag_query = query_rfc(browser, RFC, ejercicio)
-    print("Error, al consultar datos...\n")
-else:
-    osc = get_osc_data(browser)
+    if flag_query == True:
+        osc = get_osc_data(browser)
+        break
+    else:
+        print("Error, al consultar datos...\n")
+    i += 1
 
 browser.close()
 browser.quit()
