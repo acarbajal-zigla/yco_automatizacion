@@ -5,15 +5,15 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 import re
+import get_table_data
 
 NAMES = {
     # Datos generales
     'Mision':'transparenciaDetForm:idGralesRegistro:_idJsp31',
     'Vision':'transparenciaDetForm:idGralesRegistro:_idJsp36',
-    # TODO: AGREGAR LINK TAG <a>"window.open('{LINK_RELEVANTE}', 'popupWindowName', 'menubar=no, 
-    # toolbar=no, status=yes'); return false; "</a>'Pagina web':
-    # 'transparenciaDetForm:idGralesRegistro:_idJsp41',
+    'Pagina web':'transparenciaDetForm:idGralesRegistro:_idJsp41',
     'Anio de autorizacion':'transparenciaDetForm:_idJsp26',
+    'Socios o Asociados':'transparenciaDetForm:idGralesRegistro:_idJsp67',
     # Plantillas de personal
     'Plantilla laboral': 'transparenciaDetForm:idGralesRegistro:_idJsp78',
     'Plantilla voluntariado': 'transparenciaDetForm:idGralesRegistro:_idJsp79',
@@ -71,11 +71,12 @@ def get_osc_data(browser):
         wait.until(EC.presence_of_element_located((By.ID, 'transparenciaDetForm:idEgresosRegistro:dataTableMontosConceptos:tbody_element')))
         tabla = browser.find_element_by_id("transparenciaDetForm:idEgresosRegistro:dataTableMontosConceptos:tbody_element")
         for renglon in tabla.find_elements_by_xpath(".//tr[contains(@class,'renglon')]"):
+            for a in renglon.find_elements_by_xpath(".//*"):
+                print(a.get_attribute('innerHTML'))
             aux={'monto':'', 'concepto':''}
             aux['monto'] = renglon.find_element_by_xpath(f"./td[1]/table/tbody/tr/td").text
             aux['concepto'] = renglon.find_element_by_xpath(f"./td[2]").text
             montos.append(aux)
-    print(montos)
 # Ejercicio Fiscal
     # Selector --> transparenciaDetForm:idSelectEjercicioFiscal (childs -> anios disponibles)
     # Boton para consulta de anio --> transparenciaDetForm:_idJsp22
