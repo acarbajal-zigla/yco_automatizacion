@@ -4,20 +4,22 @@ from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+
 import TableFuncs
 from constantes import TABLAS, NAMES
 
+import pandas as pd
+
 def get_osc_field(browser, dict_osc, field_name):
-    print('Procesando {}'.format(field_name))
     field = browser.find_element_by_name(NAMES[field_name])
-
+    aux = ''
     if field.tag_name == 'input':
-        dict_osc[field_name] = field.get_attribute('value')
+        aux = field.get_attribute('value')
     elif field.tag_name == 'textarea':
-        dict_osc[field_name] = field.text
+        aux = field.text.replace('\t', ' ')
     elif field.tag_name == 'a':
-        dict_osc[field_name] = field.get_attribute('innerHTML')
-
+        aux = field.get_attribute('innerHTML')
+    dict_osc[field_name] = aux.replace('\n',' ').replace('\t', ' ').strip()
 # Funcion que scrapea todos los datos devueltos por la consulta
 def get_osc_data(browser):
     osc = dict()
@@ -28,19 +30,16 @@ def get_osc_data(browser):
     # Rubros autorizados
     rubro_aut = browser.find_element_by_id(NAMES['Rubros autorizados'])
     rubro_aut = Select(rubro_aut)
-    rubros = [opt.text for opt in rubro_aut.options]
-    osc['rubros_autorizados'] = rubros
+    rubros = [opt.text.replace('\n',' ').replace('\t', ' ').strip() for opt in rubro_aut.options]
+    osc[NAMES['rubros_autorizados']] = rubros
 
     # Tablas
     for table_data in TABLAS:
-        data = TableFuncs.get_datos_tabla(browser, table_data)
-        print(f"TABLA: {table_data['categoria']} - {table_data['subcategoria']}\n")
-        print(data)
-        print('\n')
+        osc[table_data['categoria']] = []
 
-# Ejercicio Fiscal
-    # Selector --> transparenciaDetForm:idSelectEjercicioFiscal (childs -> anios disponibles)
-    # Boton para consulta de anio --> transparenciaDetForm:_idJsp22
+    for table_data in TABLAS:
+        data = TableFuncs.get_datos_tabla(browser, table_data)
+        osc[table_data['categoria']].append(data)
 
     return osc
 
@@ -81,7 +80,15 @@ flag_query = False
 while(i<2 and flag_query == False):
     flag_query = query_rfc(browser, RFC, ejercicio)
     if flag_query == True:
-        osc = get_osc_data(browser)
+        ejercicios_box = browser.find_element_by_id("transparenciaDetForm:idSelectEjercicioFiscal")
+        ejercicios_disponibles = Select(ejercicios_box)
+        ejercicios_disponibles = [opt.text for opt in ejercicios_disponibles.options]
+        for ejercicio in ejercicios_disponibles:
+            print(ejercicio)
+            browser.find_element_by_xpath(f"//select[@name='transparenciaDetForm:idSelectEjercicioFiscal']/option[text()={ejercicio}]").click()
+            boton_consulta = browser.find_element_by_id("transparenciaDetForm:_idJsp22")
+            boton_consulta.click()
+            osc[ejercicio] = get_osc_data(browser)
         break
     else:
         print("Error, al consultar datos...\n")
@@ -90,3 +97,6 @@ while(i<2 and flag_query == False):
 browser.close()
 browser.quit()
 print(osc)
+
+df = pd.DataFrame.from_dict(osc)
+df.to_excel('C:/Users/ZIGLA/Documents/TEST_YCO.xlsx')

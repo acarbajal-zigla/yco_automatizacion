@@ -6,7 +6,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from constantes import HEAD
 
-
 def get_headers_tabla(tabla):
     headers = [element.get_attribute('innerHTML') for element in tabla.find_elements_by_class_name('tablaHeader')] 
     return headers
@@ -15,7 +14,7 @@ def get_valores_renglones(tabla):
     renglones = tabla.find_elements_by_xpath(".//tr[contains(@class,'renglon')]")
     valores=[]
     for renglon in renglones:
-        valores.append(tuple([a.get_attribute('innerHTML') for a in renglon.find_elements_by_xpath(".//*") if not(a.get_attribute('innerHTML').startswith('<'))]))
+        valores.append(tuple([a.get_attribute('innerHTML').replace('\n',' ').replace('\t', ' ').strip() for a in renglon.find_elements_by_xpath(".//*") if not(a.get_attribute('innerHTML').startswith('<'))]))
     return valores
 
 def get_datos_tabla(browser: webdriver.Chrome, table_data:dict):
