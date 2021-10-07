@@ -1,14 +1,12 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.chrome.options import Options
 
 import TableFuncs
 from constantes import TABLAS, NAMES
-
-import pandas as pd
 
 def get_osc_field(browser, dict_osc, field_name):
     field = browser.find_element_by_name(NAMES[field_name])
@@ -31,7 +29,7 @@ def get_osc_data(browser):
     rubro_aut = browser.find_element_by_id(NAMES['Rubros autorizados'])
     rubro_aut = Select(rubro_aut)
     rubros = [opt.text.replace('\n',' ').replace('\t', ' ').strip() for opt in rubro_aut.options]
-    osc[NAMES['rubros_autorizados']] = rubros
+    osc['Rubros autorizados'] = rubros
 
     # Tablas
     for table_data in TABLAS:
@@ -40,7 +38,7 @@ def get_osc_data(browser):
     for table_data in TABLAS:
         data = TableFuncs.get_datos_tabla(browser, table_data)
         osc[table_data['categoria']].append(data)
-
+    
     return osc
 
 def query_rfc(browser: webdriver.Chrome, rfc: str, ejercicio: str):
@@ -65,38 +63,20 @@ def query_rfc(browser: webdriver.Chrome, rfc: str, ejercicio: str):
     except:
         return False
     return True
-    
-RFC = "CRM050218MCA"
-ejercicio = '2019'
 
-options = Options()
-#options.headless=True
-
-browser = webdriver.Chrome(options=options)
-osc={}
-
-i=0
-flag_query = False
-while(i<2 and flag_query == False):
-    flag_query = query_rfc(browser, RFC, ejercicio)
-    if flag_query == True:
-        ejercicios_box = browser.find_element_by_id("transparenciaDetForm:idSelectEjercicioFiscal")
-        ejercicios_disponibles = Select(ejercicios_box)
-        ejercicios_disponibles = [opt.text for opt in ejercicios_disponibles.options]
-        for ejercicio in ejercicios_disponibles:
-            print(ejercicio)
-            browser.find_element_by_xpath(f"//select[@name='transparenciaDetForm:idSelectEjercicioFiscal']/option[text()={ejercicio}]").click()
-            boton_consulta = browser.find_element_by_id("transparenciaDetForm:_idJsp22")
-            boton_consulta.click()
-            osc[ejercicio] = get_osc_data(browser)
-        break
-    else:
-        print("Error, al consultar datos...\n")
-    i += 1
-
-browser.close()
-browser.quit()
-print(osc)
-
-df = pd.DataFrame.from_dict(osc)
-df.to_excel('C:/Users/ZIGLA/Documents/TEST_YCO.xlsx')
+def connect_sat(rfc):
+    options = Options()
+    #options.headless=True
+    """
+    options.add_argument('--no-sandbox')
+    options.add_argument('--no-default-browser-check')
+    options.add_argument('--disable-extensions')
+    options.add_argument('--disable-default-apps')
+"""
+    browser = webdriver.Chrome(options=options)
+    flag_query = False
+    j=0
+    while(j<2 and flag_query == False):
+        flag_query = query_rfc(browser, rfc, "2019")
+        j += 1
+    return browser

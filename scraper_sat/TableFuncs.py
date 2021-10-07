@@ -24,7 +24,7 @@ def get_datos_tabla(browser: webdriver.Chrome, table_data:dict):
             'scroll':f"{HEAD}:id{table_data['categoria']}Registro:scroll{table_data['subcategoria']}next"
             }
     # Encuentro la tabla y la guardo en la variable "tabla"
-    wait = WebDriverWait(browser, 10)
+    wait = WebDriverWait(browser, 4)
     wait.until(EC.presence_of_element_located((By.ID, ids['table']+':tbody_element')))
     tabla = browser.find_element_by_id(ids['table'])
 
@@ -33,7 +33,6 @@ def get_datos_tabla(browser: webdriver.Chrome, table_data:dict):
     button_next_scroller = browser.find_element_by_id(ids['scroll'])
     scroller = button_next_scroller.find_elements_by_xpath('../../td')
     paginas = len(scroller) - 5
-
     valores=[]
     
     if(paginas <= 1):
@@ -42,15 +41,15 @@ def get_datos_tabla(browser: webdriver.Chrome, table_data:dict):
     for page in range(1, paginas + 1):
         wait.until(EC.presence_of_element_located((By.ID, ids['table']+':tbody_element')))
         tabla = browser.find_element_by_id(ids['table'])
-        valores = get_valores_renglones(tabla)
+        valores += get_valores_renglones(tabla)
         if paginas > 1 and page < paginas:
             wait.until(EC.presence_of_element_located((By.ID, ids['scroll'])))
             browser.find_element_by_id(ids['scroll']).click()
 
-
-    
-    data_tabla = dict()
+    data_tabla = []
     for tupla in valores:
+        aux = dict()
         for i in range(len(headers)):
-            data_tabla[headers[i]] = tupla[i]
-    return data_tabla
+            aux[headers[i]] = tupla[i]
+        data_tabla.append(aux)
+    return {table_data['subcategoria']:data_tabla}
