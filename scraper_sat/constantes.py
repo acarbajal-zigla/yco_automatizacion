@@ -1,8 +1,5 @@
-import re
-
 # Constantes
 HEAD = 'transparenciaDetForm'
-#REGEX_WEB = re.compile(r"window\.open\(\'<web>\', \'popupWindowName\', \'menubar=no, toolbar=no, status=yes\'\); return false;")
 
 NAMES = {
     # Datos generales
@@ -40,3 +37,12 @@ TABLAS = [
         {'categoria':'Actividades', 
         'subcategoria':'Actividades'}
     ]
+
+ERRORES = {
+    # Errores de busqueda inicial
+    "NO_AUTORIZADO": "La entidad que señala no cuenta con autorización para recibir donativos deducibles, favor de verificar la denominación o el RFC.",
+    "AL_RECUPERAR":"ERROR AL RECUPERAR LA INFORMACION, INTENTE MAS TARDE",
+    # Errores al cambiar de año dentro de la busqueda
+    "NO_EXITE_DATO": "La Donataria Autorizada no ha capturado la información que desea consultar."
+
+}

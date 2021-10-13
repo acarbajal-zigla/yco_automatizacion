@@ -1,4 +1,5 @@
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -6,7 +7,17 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.chrome.options import Options
 
 import TableFuncs
-from constantes import TABLAS, NAMES
+from constantes import TABLAS, NAMES, ERRORES
+
+def check_exists(path_or_id, mode):
+    try:
+        if mode == "xpath":
+            webdriver.find_element_by_xpath(path_or_id)
+        elif mode == "id":
+            webdriver.find_element_by_id(path_or_id)
+    except NoSuchElementException:
+        return False
+    return True
 
 def get_osc_field(browser, dict_osc, field_name):
     field = browser.find_element_by_name(NAMES[field_name])
@@ -60,23 +71,36 @@ def query_rfc(browser: webdriver.Chrome, rfc: str, ejercicio: str):
         wait = WebDriverWait(browser, 4)
         boton_RFC = wait.until(EC.element_to_be_clickable((By.ID, 'publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20')))
         boton_RFC.click()
-    except:
+    except NoSuchElementException:
         return False
     return True
 
 def connect_sat(rfc):
     options = Options()
-    #options.headless=True
-    """
-    options.add_argument('--no-sandbox')
-    options.add_argument('--no-default-browser-check')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-default-apps')
-"""
+    options.headless=True
     browser = webdriver.Chrome(options=options)
-    flag_query = False
+
+    XPATH_TEXTO_ERROR = "/html/body/form/table[6]/tbody/tr/td/ul/li/text()"
+
     j=0
+    ejercicio = 2019
+    flag_query = False
+
     while(j<2 and flag_query == False):
-        flag_query = query_rfc(browser, rfc, "2019")
-        j += 1
+        flag_query = query_rfc(browser, rfc, str(ejercicio))
+        if flag_query == True:
+            break
+
+        if check_exists(XPATH_TEXTO_ERROR, "xpath") ==  True:
+            texto_error = browser.find_element_by_xpath(XPATH_TEXTO_ERROR, "xpath")
+            if texto_error == ERRORES["NO_AUTORIZADO"]:
+                ejercicio -= 1
+                if ejercicio < 2014:
+                    return None
+                j = 0
+            elif texto_error == ERRORES["AL_RECUPERAR"]:
+                j += 1
+            else:
+                raise "Error"
+
     return browser
