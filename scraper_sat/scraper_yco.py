@@ -12,12 +12,13 @@ from constantes import TABLAS, NAMES, ERRORES
 
 def check_exists(browser, path_or_id, mode):
     ret = True
+    wait = WebDriverWait(browser, 3)
     try:
         if mode == 'xpath':
-            browser.find_element_by_xpath(path_or_id)
+            wait.until(EC.presence_of_element_located((By.XPATH, path_or_id)))
         elif mode == 'id':
-            browser.find_element_by_id(path_or_id)
-    except NoSuchElementException:
+            wait.until(EC.presence_of_element_located((By.ID, path_or_id)))
+    except TimeoutException:
         ret = False
     return ret
 
@@ -54,71 +55,69 @@ def get_osc_data(browser):
     
     return osc
 
-def query_rfc(browser: webdriver.Chrome, rfc: str, ejercicio: str):
+def submit_rfc_form(browser: webdriver.Chrome, rfc: str, ejercicio: str):
     URL = "https://portalsat.plataforma.sat.gob.mx/TransparenciaDonaciones/faces/publica/frmCConsultaDona.jsp"
-
     browser.get(URL)
     
-    ejercicio_fiscal = browser.find_element_by_id('publicaConsultaDonaForm:idSelectEjercicioFiscal')
-    ejercicio_fiscal.send_keys(ejercicio)
-
-    rfc_box = browser.find_element_by_id("publicaConsultaDonaForm:idRfc")
-    rfc_box.send_keys(rfc)
-
-    boton_buscar = browser.find_element_by_id("publicaConsultaDonaForm:_idJsp24")
-    boton_buscar.click()
+    # Setteo el ejercicio y el RFC en el formulario
+    browser.find_element_by_id('publicaConsultaDonaForm:idSelectEjercicioFiscal').send_keys(ejercicio)
+    browser.find_element_by_id("publicaConsultaDonaForm:idRfc").send_keys(rfc)
+    # Submit
+    browser.find_element_by_id("publicaConsultaDonaForm:_idJsp24").click()
     
     if check_exists(browser, 'publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20', 'id') == True:
-        boton_RFC = browser.find_element_by_id('publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20') # Boton de RFC que lleva a datos
-        boton_RFC.click()
-    if check_exists(browser, '_idJsp1:_idJsp6', 'id') == True:
-        boton_Consultar_Registro = browser.find_element_by_id('_idJsp1:_idJsp6') # Boton de DDJJs
-        boton_Consultar_Registro.click()
-    
-    if check_exists(browser, 'transparenciaDetForm:_idJsp22', 'id') == True:
-        return True
+        # Click en boton de RFC que me lleva a los datos de la consulta
+        browser.find_element_by_id('publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20').click()
+        
+        # En caso de surgir una pantalla de DDJJ
+        if check_exists(browser, '_idJsp1:_idJsp6', 'id') == True:
+            browser.find_element_by_id('_idJsp1:_idJsp6').click() # Click en boton de DDJJs
     else:
         return False
 
-def connect_sat(rfc):
+    # Devuelvo True si pude ingresar bien chequeando la existencia del botón "Consultar" - else: False
+    return check_exists(browser, 'transparenciaDetForm:_idJsp22', 'id')
+
+def connect_sat(rfc, ejercicio):
     options = Options()
-    options.headless=False
+    options.headless=True
     browser = webdriver.Chrome(options=options)
 
     XPATH_TEXTO_ERROR = '/html/body/form/table[6]/tbody/tr/td/ul/li'
     XPATH_ALTERNATIVO = '/html/body/table[2]/tbody/tr/td/b'
-
+    
     i=0
-    ejercicio = 2019
     flag_query = False
-
     while(i<2 and flag_query == False):
-        flag_query = query_rfc(browser, rfc, str(ejercicio))
+        # Si ingrese en este intento, salgo del loop y continuo con los datos
+        flag_query = submit_rfc_form(browser, rfc, str(ejercicio))
         if flag_query == True:
             break
-
+        
+        # Si no pude ingresar por un error, chequeo cual fue
         if check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
             texto_error = browser.find_element_by_xpath(XPATH_TEXTO_ERROR)
             texto_error = texto_error.get_attribute("innerHTML")
+            # No tiene datos para este anio - no fue atorizada para recibir donativos ese ejercicio
             if texto_error == ERRORES["NO_AUTORIZADO"]:
-                ejercicio -= 1
-                if ejercicio < 2014:
-                    return None
-                i = 0
+                return None
+            # Error estandar - error al recuperar los datos. Solo hay que intentar de nuevo.
             elif texto_error == ERRORES["AL_RECUPERAR"]:
                 i += 1
             else:
-                raise "Error"
-        elif check_exists(browser, XPATH_ALTERNATIVO, 'xpath') ==  True:
+                return None
+
+        # Ese anio la donataria no cargo los datos correspondientes
+        elif check_exists(browser, XPATH_ALTERNATIVO, 'xpath') == True:
                 texto_error = browser.find_element_by_xpath(XPATH_ALTERNATIVO)
                 texto_error = texto_error.get_attribute("innerHTML")
                 if texto_error == ERRORES["NO_EXISTE_DATO"]:
-                    ejercicio -= 1
-                    if ejercicio < 2014:
-                        return None
-                    i = 0
+                    return None
         else:
             i+=1
+
+    # Si hice 2 iteraciones fallidas retorno None, si no devuelvo el browser
     if i == 2:
         return None
-    return browser
+    else:
+        return browser
