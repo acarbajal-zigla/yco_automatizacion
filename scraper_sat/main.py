@@ -1,11 +1,10 @@
-from scraper_yco import connect_sat, get_osc_data
+from scraper_yco import submit_rfc_form, get_osc_data
 from threading import Thread
-from queue import Queue
 import pandas as pd
 
 def scraper_rfc(rfc, data_rfcs):
     print(f"    Obteniendo datos de {rfc}")
-    browser = connect_sat(rfc, ejercicio)
+    browser = submit_rfc_form(rfc, ejercicio)
     if browser != None:
         data_rfcs[rfc] = get_osc_data(browser)
         browser.quit()
@@ -30,9 +29,7 @@ for ejercicio in [2019,2018,2017,2016,2015,2014]:
         process.join()
 
     data_final[ejercicio] = data_rfcs
-pd.DataFrame.from_dict(data_final).to_excel("test.xlsx")
-
-
+pd.DataFrame.from_dict(data_final).to_excel("test3.xlsx")
 
 ###### LA SESSION HA CADUCADO
 

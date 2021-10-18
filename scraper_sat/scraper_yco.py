@@ -1,10 +1,9 @@
-from os import path
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 
 import TableFuncs
@@ -32,11 +31,12 @@ def get_osc_field(browser, dict_osc, field_name):
     elif field.tag_name == 'a':
         aux = field.get_attribute('innerHTML')
     dict_osc[field_name] = aux.replace('\n',' ').replace('\t', ' ').strip()
-# Funcion que scrapea todos los datos devueltos por la consulta
+ 
 def get_osc_data(browser):
+    """Funcion que scrapea todos los datos devueltos por la consulta"""
     osc = dict()
 
-    for key, value in NAMES.items():
+    for key in NAMES.keys():
         get_osc_field(browser, osc, key)
     
     # Rubros autorizados
@@ -55,69 +55,57 @@ def get_osc_data(browser):
     
     return osc
 
-def submit_rfc_form(browser: webdriver.Chrome, rfc: str, ejercicio: str):
+def cargar_sat(rfc, ejercicio):
     URL = "https://portalsat.plataforma.sat.gob.mx/TransparenciaDonaciones/faces/publica/frmCConsultaDona.jsp"
-    browser.get(URL)
-    
-    # Setteo el ejercicio y el RFC en el formulario
-    browser.find_element_by_id('publicaConsultaDonaForm:idSelectEjercicioFiscal').send_keys(ejercicio)
-    browser.find_element_by_id("publicaConsultaDonaForm:idRfc").send_keys(rfc)
-    # Submit
-    browser.find_element_by_id("publicaConsultaDonaForm:_idJsp24").click()
-    
-    if check_exists(browser, 'publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20', 'id') == True:
-        # Click en boton de RFC que me lleva a los datos de la consulta
-        browser.find_element_by_id('publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20').click()
-        
-        # En caso de surgir una pantalla de DDJJ
-        if check_exists(browser, '_idJsp1:_idJsp6', 'id') == True:
-            browser.find_element_by_id('_idJsp1:_idJsp6').click() # Click en boton de DDJJs
-    else:
-        return False
-
-    # Devuelvo True si pude ingresar bien chequeando la existencia del botón "Consultar" - else: False
-    return check_exists(browser, 'transparenciaDetForm:_idJsp22', 'id')
-
-def connect_sat(rfc, ejercicio):
     options = Options()
     options.headless=True
     browser = webdriver.Chrome(options=options)
 
-    XPATH_TEXTO_ERROR = '/html/body/form/table[6]/tbody/tr/td/ul/li'
-    XPATH_ALTERNATIVO = '/html/body/table[2]/tbody/tr/td/b'
-    
-    i=0
-    flag_query = False
-    while(i<2 and flag_query == False):
-        # Si ingrese en este intento, salgo del loop y continuo con los datos
-        flag_query = submit_rfc_form(browser, rfc, str(ejercicio))
-        if flag_query == True:
-            break
-        
-        # Si no pude ingresar por un error, chequeo cual fue
-        if check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
-            texto_error = browser.find_element_by_xpath(XPATH_TEXTO_ERROR)
-            texto_error = texto_error.get_attribute("innerHTML")
-            # No tiene datos para este anio - no fue atorizada para recibir donativos ese ejercicio
-            if texto_error == ERRORES["NO_AUTORIZADO"]:
-                return None
-            # Error estandar - error al recuperar los datos. Solo hay que intentar de nuevo.
-            elif texto_error == ERRORES["AL_RECUPERAR"]:
-                i += 1
-            else:
-                return None
-
-        # Ese anio la donataria no cargo los datos correspondientes
-        elif check_exists(browser, XPATH_ALTERNATIVO, 'xpath') == True:
-                texto_error = browser.find_element_by_xpath(XPATH_ALTERNATIVO)
-                texto_error = texto_error.get_attribute("innerHTML")
-                if texto_error == ERRORES["NO_EXISTE_DATO"]:
-                    return None
-        else:
-            i+=1
-
-    # Si hice 2 iteraciones fallidas retorno None, si no devuelvo el browser
-    if i == 2:
+    try:
+        browser.get(URL)
+        # Setteo el ejercicio y el RFC en el formulario
+        browser.find_element_by_id('publicaConsultaDonaForm:idSelectEjercicioFiscal').send_keys(ejercicio)
+        browser.find_element_by_id("publicaConsultaDonaForm:idRfc").send_keys(rfc)
+        # Submit
+        browser.find_element_by_id("publicaConsultaDonaForm:_idJsp24").click()
+    except:
         return None
-    else:
+    return browser
+
+def submit_rfc_form(rfc: str, ejercicio: str):
+    XPATH_TEXTO_ERROR = '/html/body/form/table[6]/tbody/tr/td/ul/li'
+    ID_BOTON_RFC = 'publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20'
+    browser = None
+
+    while browser == None:
+        browser = cargar_sat(rfc, ejercicio)
+    
+    if check_exists(browser, ID_BOTON_RFC, 'id') == True:
+        # Click en boton de RFC que me lleva a los datos de la consulta
+        browser.find_element_by_id(ID_BOTON_RFC).click()
+        # En caso de surgir una pantalla de DDJJ
+        if check_exists(browser, '_idJsp1:_idJsp6', 'id') == True:
+            browser.find_element_by_id('_idJsp1:_idJsp6').click() # Click en boton de DDJJs
+    elif check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
+        texto_error = browser.find_element_by_xpath(XPATH_TEXTO_ERROR)
+        texto_error = texto_error.get_attribute("innerHTML")
+        # Error estandar - error al recuperar los datos. Solo hay que intentar de nuevo.
+        if texto_error == ERRORES["AL_RECUPERAR"] or texto_error == ERRORES["SESION"]:
+            browser.quit()
+            browser = cargar_sat(rfc, ejercicio)
+            """# No hay datos para este ejercicio
+            elif texto_error == ERRORES["NO_AUTORIZADO"]:
+                browser.quit()
+                return None"""
+        else:
+            browser.quit()
+            return None
+    elif check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
+        browser.quit()
+        return None
+
+    # Devuelvo True si pude ingresar bien chequeando la existencia del botón "Consultar" - else: False
+    if check_exists(browser, NAMES['Mision'], 'id') == True:
         return browser
+    else:
+        return None
