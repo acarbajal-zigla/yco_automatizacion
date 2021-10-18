@@ -43,6 +43,6 @@ ERRORES = {
     "NO_AUTORIZADO": "La entidad que señala no cuenta con autorización para recibir donativos deducibles, favor de verificar la denominación o el RFC.",
     "AL_RECUPERAR":"ERROR AL RECUPERAR LA INFORMACION, INTENTE MAS TARDE",
     # Errores al cambiar de año dentro de la busqueda
-    "NO_EXITE_DATO": "La Donataria Autorizada no ha capturado la información que desea consultar."
+    "NO_EXISTE_DATO": "La Donataria Autorizada no ha capturado la información que desea consultar."
 
 }
