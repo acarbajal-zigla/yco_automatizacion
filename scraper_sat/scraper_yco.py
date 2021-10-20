@@ -74,23 +74,36 @@ def cargar_sat(rfc, ejercicio):
 
 def submit_rfc_form(rfc: str, ejercicio: str):
     XPATH_TEXTO_ERROR = '/html/body/form/table[6]/tbody/tr/td/ul/li'
+    XPATH_TEXTO_NO_HA_CAPTURADO = '/html/body/table[2]/tbody/tr/td/b'
     ID_BOTON_RFC = 'publicaConDonaDetalleForm:dataTableDonatarias:0:_idJsp20'
-    browser = None
+    ID_BOTON_DDJJ = '_idJsp1:_idJsp6'
 
+    # Cargo el formulario y hago click en Buscar
+    browser = None
     while browser == None:
         browser = cargar_sat(rfc, ejercicio)
     
     if check_exists(browser, ID_BOTON_RFC, 'id') == True:
         # Click en boton de RFC que me lleva a los datos de la consulta
         browser.find_element_by_id(ID_BOTON_RFC).click()
-        # En caso de surgir una pantalla de DDJJ
-        if check_exists(browser, '_idJsp1:_idJsp6', 'id') == True:
-            browser.find_element_by_id('_idJsp1:_idJsp6').click() # Click en boton de DDJJs
+
+        if check_exists(browser, ID_BOTON_DDJJ, 'id') == True:
+            browser.find_element_by_id(ID_BOTON_DDJJ).click() # Click en boton de DDJJs ("Consultar Registro")
+        elif check_exists(browser, XPATH_TEXTO_NO_HA_CAPTURADO, 'xpath') == True:
+            texto_error = browser.find_element_by_xpath(XPATH_TEXTO_NO_HA_CAPTURADO)
+            texto_error = texto_error.get_attribute("innerHTML")
+            if texto_error == ERRORES["NO_EXISTE_DATO"]:
+                browser.quit()
+                return None
+            else:
+                print(f"Error desconocido! - {rfc} - {ejercicio}")
+    
     elif check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
         texto_error = browser.find_element_by_xpath(XPATH_TEXTO_ERROR)
         texto_error = texto_error.get_attribute("innerHTML")
-        # Error estandar - error al recuperar los datos. Solo hay que intentar de nuevo.
+    
         if texto_error == ERRORES["AL_RECUPERAR"] or texto_error == ERRORES["SESION"]:
+            # Error estandar - error al recuperar los datos. Solo hay que intentar de nuevo.
             browser.quit()
             browser = cargar_sat(rfc, ejercicio)
             """# No hay datos para este ejercicio
@@ -104,7 +117,7 @@ def submit_rfc_form(rfc: str, ejercicio: str):
         browser.quit()
         return None
 
-    # Devuelvo True si pude ingresar bien chequeando la existencia del botón "Consultar" - else: False
+    # Devuelvo True si pude ingresar bien chequeando la existencia del campo "Misión" - else: False
     if check_exists(browser, NAMES['Mision'], 'id') == True:
         return browser
     else:
