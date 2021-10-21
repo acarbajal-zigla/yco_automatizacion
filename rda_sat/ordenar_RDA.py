@@ -1,22 +1,11 @@
-import openpyxl
+import camelot
 from openpyxl.worksheet.worksheet import Worksheet
 from openpyxl.utils import range_boundaries
 
 import pandas as pd
 import numpy as np
 
-""" 
-       if (row_[0] == row_[1]) and (row_[3] == None):      # Caso -> es una categoria
-            categoria = row_[0]
-            row.drop()
-        elif (len(row_[0]) == 13) and (row_[0] != row_[1]): # Caso -> es un dato
-            row["CATEGORIA"] = categoria
-            row["ENTIDAD FEDERATIVA"] = entidad_federativa
-        elif row_[0].startswith("TOTAL "):                  # Caso -> es el total y saco la entidad federativa
-            entidad_federativa = re.search("TOTAL (.*)", row_[0]).group(1)
-            df["ENTIDAD FEDERATIVA"] = entidad_federativa
-"""
-def get_header_from_dataframe(df: pd.DataFrame):
+def get_headers_from_dataframe(df: pd.DataFrame):
     for index, row in df.iterrows():
         if (row[0] == "RFC") and (row[1] == "DENOMINACIÓN O RAZÓN SOCIAL"):
             alto_header = 1
@@ -85,65 +74,28 @@ def get_tabla_entidades_federativas(ws: Worksheet):
             tabla_EF.append([cell.value for cell in row])
     return tabla_EF
 
-import camelot
+def get_table_from_pdf(path, hojas):
 
-path = r'C:\Users\ZIGLA\Desktop\RDA_2020.pdf'
-tables = camelot.read_pdf(path, pages='316-321', copy_text=['h', 'v'],  line_scale=80)
-  
-# Concateno todas las tablas en un dataframe
-df = pd.concat([t.df for t in tables])
-
-# Obtengo y asigno headers
-headers = get_header_from_dataframe(df)
-df.columns = headers
-
-# Elimino las filas que son repetición de headers por cambio de entidad federativa
-df = df[df["RFC"] != "RFC"]
-# Elimino todas las filas vacias
-df = df.dropna()
-df = df[df["RFC"].astype(bool)]
-
-# Agrego las columnas de categoria y entidad federativa
-df[["CATEGORIA", "ENTIDAD FEDERATIVA"]] = np.nan
+    tables = camelot.read_pdf(path, pages=hojas, copy_text=['h', 'v'],  line_scale=80)
     
-set_categorias(df)
-set_entidades_federativas(df)
-df = df[df[df.columns[0]] != df["CATEGORIA"]]
-df = df.replace("-","")
-df.to_excel(r'C:\Users\ZIGLA\Desktop\foo.xlsx', index=False)
-exit()
+    # Concateno todas las tablas en un dataframe
+    df = pd.concat([t.df for t in tables])
 
-wb = openpyxl.load_workbook(path)
-ws = wb.active
+    # Obtengo y asigno headers
+    headers = get_headers_from_dataframe(df)
+    df.columns = headers
 
-for cell_group in ws.merged_cells.ranges:
-        min_col, min_row, max_col, max_row = range_boundaries(str(cell_group))
-        top_left_cell_value = ws.cell(row=min_row, column=min_col).value
-        ws.unmerge_cells(str(cell_group))
-        for row in ws.iter_rows(min_col=min_col, min_row=min_row, max_col=max_col, max_row=max_row):
-            for cell in row:
-                cell.value = top_left_cell_value
-wb.save(path)
+    # Elimino las filas que son repetición de headers por cambio de entidad federativa
+    df = df[df["RFC"] != "RFC"]
+    # Elimino todas las filas vacias
+    df = df.dropna()
+    df = df[df["RFC"].astype(bool)]
 
-df = get_tabla_entidades_federativas(ws)
-print(df.head())
-
-# Concateno todas las hojas
-
-# Busco RFC	y DENOMINACIÓN O RAZÓN SOCIAL en columnas A y B --> inicio de tabla
-# Alternativamente busco la fila que está vacía en todas sus columnas excepto A, 
-# y en A dice "Total [Entidad Federativa]"
-
-# A la derecha de RFC y RAZÓN SOCIAL(C, D, etcétera) están los encabezados. Si debajo de RFC no hay nada,
-# considero que hay un subítem que extraigo simplemente como C, D, etc -> una fila 
-# debajo de "RFC"
-
-# Arriba de esos valores tiene que estar la Entidad Federativa
-# Debajo arranca la primera de las categorías. Son [NOMBRE][VACIO]*N
-
-	
-# TODO: ver cómo obtengo el título (es una imagen --> OCR?)
-# TODO: pensar cómo buscar "Cuadro X" --> puede ayudar
-
-#########################################################################################################
-
+    # Agrego las columnas de categoria y entidad federativa
+    df[["CATEGORIA", "ENTIDAD FEDERATIVA"]] = np.nan
+        
+    set_categorias(df)
+    set_entidades_federativas(df)
+    df = df[df[df.columns[0]] != df["CATEGORIA"]]
+    df = df.replace("-","")
+    return df
