@@ -1,8 +1,6 @@
 from PyPDF2.generic import DictionaryObject
 from ordenar_RDA import get_table_from_pdf
 
-
-
 dict_entidades_fed = {"AGUASCALIENTES":"Aguascalientes",
 "BAJA CALIFORNIA":"Baja California",
 "BAJA CALIFORNIA SUR":"Baja California Sur",
@@ -36,14 +34,16 @@ dict_entidades_fed = {"AGUASCALIENTES":"Aguascalientes",
 "YUCATÁN":"Yucatán",
 "ZACATECAS":"Zacatecas"}
 
-# rangos = {'2014':'7-141', '2015':'6-155', '2016':'6-168', '2017': '6-171'}
+# rangos = {'2014':['7-141'], '2015':['6-155'], '2016':['6-168'], '2017': ['6-171']}
 
-rangos_por_anio = {'2021':'8-180'} # ['183-379','383-566']
+rangos_por_anio = {'2019': ['8-170', '173-312', '316-438']} #7', '150-287', '291-434']}#{'2021':['8-180','183-379','383-566']}
 
-for anio, rango in rangos_por_anio.items():
-    PDF_path = f"C:/Users/ZIGLA/Desktop/RDA_{anio}.pdf"
-    df = get_table_from_pdf(PDF_path, rango)
-    for entidad_RDA, entidad_correcta in dict_entidades_fed.items():
-        df.loc[df["ENTIDAD FEDERATIVA"] == entidad_RDA, "ENTIDAD FEDERATIVA"] = entidad_correcta
-    df.to_excel(f"C:/Users/ZIGLA/Desktop/RDA_excels/{anio}/Tabla_{rango}.xlsx", index=False)
+for anio, rangos in rangos_por_anio.items():
+    for rango in rangos:
+        PDF_path = f"C:/Users/Alen trabajo/OneDrive - Fundación ZIGLA LAB/YCO/Informes RDA/RDA_{anio}.pdf"
+        df = get_table_from_pdf(PDF_path, rango)
+        for entidad_RDA, entidad_correcta in dict_entidades_fed.items():
+            df.loc[df["ENTIDAD FEDERATIVA"] == entidad_RDA, "ENTIDAD FEDERATIVA"] = entidad_correcta
+        df.to_excel(f"C:/Users/Alen trabajo/OneDrive - Fundación ZIGLA LAB/YCO/Carga masiva/RDA_excels/{anio}/Tabla_{rango}.xlsx", index=False)
+        print(f"\nTERMINADO {anio}\n")
 
