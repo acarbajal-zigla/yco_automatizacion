@@ -44,7 +44,7 @@ def get_table_from_pdf(path, hojas):
     df.columns = headers
 
     # Elimino las filas que son repetición de headers por cambio de entidad federativa
-    df = df[df["RFC"] != "RFC"]
+    #df = df[df["RFC"] != "RFC"]
     #df = df[df["RFC"].str.startswith("TOTAL ") == False]
 
     # Elimino todas las filas vacias
