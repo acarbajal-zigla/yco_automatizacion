@@ -8,28 +8,29 @@ def scraper_rfc(rfc, data_rfcs):
     if browser != None:
         data_rfcs[rfc] = get_osc_data(browser)
         browser.quit()
+    else:
+        print("browser IS nONE")
 
 file = open("rfcs.txt")
 rfc_list = file.readlines()
 
-data_final = dict()
-for ejercicio in [2019,2018,2017,2016,2015,2014]:
-    print(f"Obteniendo datos de {ejercicio}")
-    data_rfcs = dict()
-    # Creo lista de threads
-    threads = []
-    for ii in range(len(rfc_list)):
-        # Inicio un thread por rfc.
-        process = Thread(target=scraper_rfc, args=[rfc_list[ii], data_rfcs])
-        process.start()
-        threads.append(process)
-    
-    # joineo los threads al main y los valores deberian estar guardados
-    for process in threads:
-        process.join()
+ejercicio = 2019
+print(f"Obteniendo datos de {ejercicio}")
+data_rfcs = dict()
 
-    data_final[ejercicio] = data_rfcs
-pd.DataFrame.from_dict(data_final).to_excel("test3.xlsx")
+# Creo lista de threads
+threads = []
+for rfc in rfc_list:
+    # Inicio un thread por rfc.
+    process = Thread(target=scraper_rfc, args=[rfc, data_rfcs])
+    process.start()
+    threads.append(process)
+
+# joineo los threads al main y los valores deberian estar guardados
+for process in threads:
+    process.join()
+print(data_rfcs)
+pd.DataFrame.from_dict(data_rfcs).to_excel("test3.xlsx")
 
 ###### LA SESSION HA CADUCADO
 

@@ -14,9 +14,13 @@ def check_exists(browser, path_or_id, mode):
     wait = WebDriverWait(browser, 3)
     try:
         if mode == 'xpath':
-            wait.until(EC.presence_of_element_located((By.XPATH, path_or_id)))
+            by = By.XPATH
         elif mode == 'id':
-            wait.until(EC.presence_of_element_located((By.ID, path_or_id)))
+            by= By.ID
+        elif mode == 'name':
+            by = By.NAME
+
+        wait.until(EC.presence_of_element_located((by, path_or_id)))
     except TimeoutException:
         ret = False
     return ret
@@ -85,6 +89,7 @@ def submit_rfc_form(rfc: str, ejercicio: str):
     
     if check_exists(browser, ID_BOTON_RFC, 'id') == True:
         # Click en boton de RFC que me lleva a los datos de la consulta
+        print("Encontré el botón de RFC")
         browser.find_element_by_id(ID_BOTON_RFC).click()
 
         if check_exists(browser, ID_BOTON_DDJJ, 'id') == True:
@@ -99,26 +104,36 @@ def submit_rfc_form(rfc: str, ejercicio: str):
                 print(f"Error desconocido! - {rfc} - {ejercicio}")
     
     elif check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
+        print("Se produjo algún error")
         texto_error = browser.find_element_by_xpath(XPATH_TEXTO_ERROR)
         texto_error = texto_error.get_attribute("innerHTML")
     
-        if texto_error == ERRORES["AL_RECUPERAR"] or texto_error == ERRORES["SESION"]:
+        if texto_error == ERRORES["AL_RECUPERAR"]:
             # Error estandar - error al recuperar los datos. Solo hay que intentar de nuevo.
+            browser.find_element_by_id("publicaConsultaDonaForm:_idJsp24").click()
+            if check_exists(browser, ID_BOTON_RFC, 'id') == True:
+                # Click en boton de RFC que me lleva a los datos de la consulta
+                print("Encontré el botón de RFC")
+                browser.find_element_by_id(ID_BOTON_RFC).click()
+            else:
+                print("No debe haber datos")
+        elif texto_error == ERRORES["NO_AUTORIZADO"]:
+            # No hay datos para este ejercicio
+            browser.quit()
+            return None
+        elif texto_error == ERRORES["SESION"]:
+            # Error en la sesion --> hay que agregar el XPATH EN REALIDAD
             browser.quit()
             browser = cargar_sat(rfc, ejercicio)
-            """# No hay datos para este ejercicio
-            elif texto_error == ERRORES["NO_AUTORIZADO"]:
-                browser.quit()
-                return None"""
         else:
             browser.quit()
             return None
-    elif check_exists(browser, XPATH_TEXTO_ERROR, 'xpath') ==  True:
+    elif check_exists(browser, XPATH_TEXTO_NO_HA_CAPTURADO, 'xpath') ==  True:
         browser.quit()
         return None
 
-    # Devuelvo True si pude ingresar bien chequeando la existencia del campo "Misión" - else: False
-    if check_exists(browser, NAMES['Mision'], 'id') == True:
+    # Devuelvo el browser si pude ingresar bien chequeando la existencia del campo "Misión" - else: False
+    if check_exists(browser, NAMES['Mision'], 'name') == True:
         return browser
     else:
         return None
