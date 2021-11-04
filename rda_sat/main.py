@@ -35,8 +35,8 @@ dict_entidades_fed = {"AGUASCALIENTES":"Aguascalientes",
 "ZACATECAS":"Zacatecas"}
 
 # rangos = {'2014':['7-141'], '2015':['6-155'], '2016':['6-168'], '2017': ['6-171']}
-
-rangos_por_anio = {'2019': ['233']}#['173-312']} #7', '150-287', '291-434']}#{'2021':['8-180','183-379','383-566']}
+#{'2019': ['233']}#['173-312']} #7', '150-287', '291-434']}#2021:['8-180',]
+rangos_por_anio = {'2021':['183-379','383-566', '8-180']}
 
 for anio, rangos in rangos_por_anio.items():
     for rango in rangos:
@@ -45,5 +45,5 @@ for anio, rangos in rangos_por_anio.items():
         for entidad_RDA, entidad_correcta in dict_entidades_fed.items():
             df.loc[df["ENTIDAD FEDERATIVA"] == entidad_RDA, "ENTIDAD FEDERATIVA"] = entidad_correcta
         df.to_excel(f"C:/Users/Alen trabajo/OneDrive - Fundación ZIGLA LAB/YCO/Carga masiva/RDA_excels/{anio}/Tabla_{rango}.xlsx", index=False)
-        print(f"\nTERMINADO {anio}\n")
+        print(f"\nTERMINADO {anio} - {rango}\n")
 

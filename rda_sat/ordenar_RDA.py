@@ -4,7 +4,7 @@ import numpy as np
 
 def get_headers_from_dataframe(df: pd.DataFrame):
     for index, row in df.iterrows():
-        if (row[0] == "RFC") and (row[1] == "DENOMINACION SOCIAL"):
+        if (row[0] == "RFC") and (row[1] == "DENOMINACIÓN SOCIAL"):
             alto_header = 1
             while(df.iloc[index+alto_header, 0] == "RFC"):
                 alto_header += 1
@@ -29,14 +29,13 @@ def set_entidades_federativas_viejo(df: pd.DataFrame):
     df["ENTIDAD FEDERATIVA"] = df["ENTIDAD FEDERATIVA"].ffill()
 
 def get_table_from_pdf(path, hojas):
-
-    tables = camelot.read_pdf(path, pages=hojas, copy_text=['h', 'v'],  line_scale=80)
+    tables = camelot.read_pdf(path, pages=hojas, copy_text=['h', 'v'], line_scale=70)
 
     # Concateno todas las tablas en un dataframe
     df = pd.concat([t.df for t in tables])
 #   df[pd.notna(df[df.columns[-1]])] = df[pd.notna(df[df.columns[-1]])].shift(axis=1, periods=-1)
-    if df[df.columns[-2]].equals(df[df.columns[-3]]):
-        df = df[df.columns[:-2]] # en los datos viejos elimina la columna de datos inválidos
+    #if df[df.columns[-2]].equals(df[df.columns[-3]]):
+    #    df = df[df.columns[:-2]] # en los datos viejos elimina la columna de datos inválidos
 
     # Obtengo y asigno headers
     headers = get_headers_from_dataframe(df)
@@ -44,7 +43,7 @@ def get_table_from_pdf(path, hojas):
     df.columns = headers
 
     # Elimino las filas que son repetición de headers por cambio de entidad federativa
-    #df = df[df["RFC"] != "RFC"]
+    df = df[df["RFC"] != "RFC"]
     #df = df[df["RFC"].str.startswith("TOTAL ") == False]
 
     # Elimino todas las filas vacias
