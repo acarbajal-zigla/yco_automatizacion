@@ -1,6 +1,5 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.support.select import Select
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -24,7 +23,7 @@ def get_datos_tabla(browser: webdriver.Chrome, table_data:dict):
             'scroll':f"{HEAD}:id{table_data['categoria']}Registro:scroll{table_data['subcategoria']}next"
             }
     # Encuentro la tabla y la guardo en la variable "tabla"
-    wait = WebDriverWait(browser, 4)
+    wait = WebDriverWait(browser, 8)
     wait.until(EC.presence_of_element_located((By.ID, ids['table']+':tbody_element')))
     tabla = browser.find_element_by_id(ids['table'])
 
