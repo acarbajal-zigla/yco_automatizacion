@@ -1,3 +1,7 @@
 InformeTransparencia.xlsx
 ~$InformeTransparencia.xlsx
 ~$test.xlsx
+/scraper_sat/logs\ LEGACY/
+/scraper_sat/run*
+*.pyc
+.DS_Store
