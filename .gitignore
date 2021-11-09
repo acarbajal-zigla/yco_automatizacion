@@ -4,4 +4,5 @@ InformeTransparencia.xlsx
 /scraper_sat/logs\ LEGACY/
 /scraper_sat/run*
 *.pyc
+*.html
 .DS_Store
