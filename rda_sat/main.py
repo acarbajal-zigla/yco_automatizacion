@@ -1,4 +1,3 @@
-from PyPDF2.generic import DictionaryObject
 from ordenar_RDA import get_table_from_pdf
 
 dict_entidades_fed = {"AGUASCALIENTES":"Aguascalientes",

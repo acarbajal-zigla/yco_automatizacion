@@ -1,3 +1,5 @@
 InformeTransparencia.xlsx
 ~$InformeTransparencia.xlsx
 ~$test.xlsx
+*.log
+*.pyc
