@@ -9,9 +9,6 @@ import datetime
 from os import getcwd
 from os import mkdir
 
-import time
-
-start_time = time.time()
 timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 try:
     mkdir(getcwd() + f"/scraper_sat/run_{timestamp}/")
@@ -44,17 +41,17 @@ def scraper_rfc(rfc, data_rfcs):
                 browser = submit_rfc_form(rfc, ejercicio)
             i += 1
 
-file = open("rfcs.txt") 
+file = open("rfcs.txt")
+rfc_list = list(set(file.readlines()))
 logging.info(f"Número de registros (RFCs): {len(rfc_list)}")
 
 ejercicio = 2019
-MAX_THREADS = 30
+MAX_THREADS = 10
 
 # Creo lista de threads
 threads = []
 total_obtenidos = 0
 for i in range(0,len(rfc_list),MAX_THREADS):
-    start_time_of_batch = time.time()
     data_rfcs = dict()
     logging.info(f"\n---------------------Iniciando set de rfcs #{i//MAX_THREADS}---------------------\n")
     if(i+MAX_THREADS<len(rfc_list)):
@@ -71,10 +68,13 @@ for i in range(0,len(rfc_list),MAX_THREADS):
     # joineo los threads al main y los valores deberian estar guardados
     for process in threads:
         process.join()
-
-    logging.info(f"-------Información obtenida para {len(data_rfcs)} organizaciones en {round(time.time() - start_time_of_batch, 3)} segundos-------")
+    logging.info(f"-------Información obtenida para {len(data_rfcs)} organizaciones-------")
     total_obtenidos += len(data_rfcs)
     if len(data_rfcs)>0:
         pd.DataFrame.from_dict(data_rfcs, orient='index').to_excel(f"{getcwd()}/scraper_sat/run_{timestamp}/output/out_{i//MAX_THREADS}.xlsx")
-logging.info(f"-------Información obtenida para un total de {total_obtenidos} organizaciones en {round(time.time() - start_time, 3)} segundos-------")
+logging.info(f"-------Información obtenida para un total de {total_obtenidos} organizaciones-------")
 logging.shutdown()
+###### LA SESSION HA CADUCADO
+
+# "/html/body/table[2]/tbody/tr/td/b"
+# Botón "Aceptar" (name = "Aceptar")
