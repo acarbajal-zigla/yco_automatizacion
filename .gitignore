@@ -5,3 +5,4 @@ InformeTransparencia.xlsx
 /scraper_sat/run*
 *.pyc
 .DS_Store
+*.log

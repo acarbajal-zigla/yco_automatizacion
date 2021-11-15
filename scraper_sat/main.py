@@ -13,6 +13,7 @@ timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
 try:
     mkdir(getcwd() + f"/scraper_sat/run_{timestamp}/")
     mkdir(getcwd() + f"/scraper_sat/run_{timestamp}/output/")
+    mkdir(getcwd() + f"/scraper_sat/run_{timestamp}/unhandled_errors/")
 except:
     exit()
 logger_filename = getcwd() + f"/scraper_sat/run_{timestamp}/log_scraper.log"
