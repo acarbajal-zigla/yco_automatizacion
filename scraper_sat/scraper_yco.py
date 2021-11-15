@@ -157,7 +157,7 @@ def cargar_sat(rfc, ejercicio):
                 browser.quit()
         else:
             inner_html = browser.find_element_by_tag_name('html').get_attribute('innerHTML')
-            f = open(f"{rfc}.html", 'w')
+            f = open(f"scraper_sat/unhandled_errors/{rfc}.html", 'w')
             f.write(inner_html)
             f.close()
     elif flag_error == False:
